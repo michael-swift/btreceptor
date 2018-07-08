@@ -20,11 +20,11 @@ def _vfill(v_ref, seq):
     """ Replace any nucleotides missing from the start of the V gene
     """
 
-    v_ref = v_ref[:25]
-    v_seq = seq[:25]
+    v_ref = v_ref[:75]
+    v_seq = seq[:75]
 
     v_filled = _fill_missing_nt(v_ref, v_seq)
-    seq_filled = v_filled + seq[25:]
+    seq_filled = v_filled + seq[75:]
 
     return seq_filled
 
@@ -45,7 +45,7 @@ def global_pw_align(s0, s1):
 
 
 def _fill_missing_nt(ref_seq, seq):
-    """ Perform pairwise alignment between two sequences and fills in
+    """ Perform pairwise alignment between two sequences and fill in
         missing nucleotides
     """
 
@@ -64,12 +64,17 @@ def _fill_missing_nt(ref_seq, seq):
     return filled
 
 
-def fill_sequence(seq_id, v_ref_seq, j_ref_seq, seq):
-    """ Fill in missing nucleotide at the beginning of the
-        V gene or end of the J gene
+def fill_clean_sequence(seq_id, v_ref_seq, j_ref_seq, seq):
+    """ Clean gaps arising from deletions and fill in missing nucleotides at
+        the beginning of the V gene or end of the J gene.
     """
 
-    vfilled = _vfill(v_ref_seq, seq)
+    if '-' in seq:
+        degap = seq.replace('-','')
+    else:
+        degap = seq
+
+    vfilled = _vfill(v_ref_seq, degap)
 
     vjfilled = _jfill(j_ref_seq, vfilled)
 
