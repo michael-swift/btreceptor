@@ -50,7 +50,8 @@ def rename_changeo_columns(df, revert=False):
 
 
 def load_changeo_igblast_makedb(infile):
-    """ Loads tab separated Change-O output into pandas dataframe
+    """ Loads tab separated Change-O output into pandas dataframe. Adds
+        additional convenience columns e.g. for clustering
     """
 
     ig = pd.read_csv(infile, sep='\t')
@@ -67,6 +68,9 @@ def load_changeo_igblast_makedb(infile):
     # update / add columns
     ig['j_end'] = ig.j_start + ig.j_len
     ig['j_start_vdj'] = ig.j_start - ig.v_start
+    ig['v_call_no_allele'] = ig.v_call.str.split('*', expand=True)[0]
+    ig['j_call_no_allele'] = ig.j_call.str.split('*', expand=True)[0]
+    ig['cdr3aa_len'] = ig.cdr3aa.str.len()
 
     # cast columns as bool if not already
     bool_cols = ['functional', 'indels', 'stop', 'in_frame']
@@ -82,7 +86,7 @@ def load_gene_fasta(infile):
     """
 
     gene_dict = SeqIO.to_dict(SeqIO.parse(infile, 'fasta'))
-    # convert sequences to uppercase string
-    gene_dict = {k: str(v).upper() for k,v in gene_dict}
+    # convert SeqRecord sequences to uppercase string
+    gene_dict = {k: str(v.seq).upper() for k, v in gene_dict.items()}
 
     return gene_dict
