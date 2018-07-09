@@ -1,0 +1,5 @@
+biopython
+numpy
+scipy>=0.14
+pandas>=0.20
+python-Levenshtein
