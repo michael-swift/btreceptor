@@ -1,4 +1,4 @@
-import parsing
-import sequences
-import clustering
-import drawing
+from . import parsing
+from . import sequences
+from . import clustering
+from . import drawing
