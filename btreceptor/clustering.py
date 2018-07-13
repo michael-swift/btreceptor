@@ -23,7 +23,7 @@ def df_lineages_from_subset(frame, similarity_cutoff):
 
     edit_sq = df_pw_edit(frame)
 
-    n_groups, labels = connected_components(edit_sq <= (1 - similarity_cutoff))
+    n_groups, labels = connected_components(edit_sq <= round(1 - similarity_cutoff, 4))
 
     return labels
 
