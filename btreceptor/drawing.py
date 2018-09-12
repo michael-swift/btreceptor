@@ -1,3 +1,6 @@
+from numpy.random import seed
+
+
 def df_generate_node_dict(frame):
     """ Generates a node property dictionary for downstream graph-tool plotting
 
@@ -48,7 +51,7 @@ def df_generate_node_dict(frame):
     return node_props
 
 
-def draw_gviz(node_dict, size_multiple=50, **kwargs):
+def draw_gviz(node_dict, size_multiple=50, random_seed=42, **kwargs):
     """ Draw clonal network using graph-tool
 
     More information: graphtool edge / vertex parameters and examples:
@@ -81,6 +84,10 @@ def draw_gviz(node_dict, size_multiple=50, **kwargs):
         # add edge to ancestor
         if node_props['ancestor'] is not None:
             g.add_edge(node_props['ancestor'], node_id)
+
+    # seeds enable graph reproduction
+    seed(random_seed)
+    gt.seed_rng(random_seed)
 
     gt.graph_draw(g,
                   vertex_size=vsizes,
