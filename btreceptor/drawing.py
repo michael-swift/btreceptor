@@ -1,7 +1,7 @@
 from numpy.random import seed
 
 
-def df_generate_node_dict(frame):
+def df_generate_node_dict(frame, singletons=False):
     """ Generates a node property dictionary for downstream graph-tool plotting
 
         Args:
@@ -11,6 +11,9 @@ def df_generate_node_dict(frame):
                 - node_shape (optional)
                 - node_size (optional)
                 - node_stroke (optional)
+            singletons (bool): whether to include cells that do not form
+                multi-member clonal families
+
         Returns:
             dict: nested as follows: {node_id: {'property1': 'value1', ...}}
     """
@@ -28,17 +31,21 @@ def df_generate_node_dict(frame):
     node_props = {}
     node_id = 0
     for lin, g in frame.groupby('lineage'):
-        if g.shape[0] > 1:  # only for lineages with > 1 member
-            # add a germline to root all cells in a lineage
-            gid = node_id
-            node_props[gid] = {'color': 'k',
-                               'ancestor': None,
-                               'size': frame['node_size'].min(),
-                               'shape': 'circle',
-                               'stroke': 0}
-            node_id += 1
+        if g.shape[0] > 1 or singletons:
+            if g.shape[0] > 1:
+                # add a germline to root all cells in a lineage
+                gid = node_id
+                node_props[gid] = {'color': 'k',
+                                   'ancestor': None,
+                                   'size': frame['node_size'].min(),
+                                   'shape': 'circle',
+                                   'stroke': 0}
+                node_id += 1
+            else:
+                # no germline root for a singleton
+                gid = None
 
-            # add cells with properties
+            # add cell(s) with properties
             for _, row in g.iterrows():
                 node_props[node_id] = {'ancestor': gid,
                                        'color': row['node_color'],
