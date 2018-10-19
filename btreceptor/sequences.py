@@ -1,7 +1,7 @@
 from __future__ import division
 from Bio import pairwise2
 from Bio.Seq import Seq
-import parsing
+from . import parsing
 import os
 import pandas as pd
 
