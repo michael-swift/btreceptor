@@ -1,15 +1,16 @@
 from __future__ import division
 import pandas as pd
 from Bio import SeqIO
+from Bio.Seq import Seq
 
 
 def _detect_dataframe_cell_type(df):
     """ Detects whether cell type being analyzed is B or T cells
     """
 
-    if df.v_call.str.startswith('IG').all():
+    if df.v_call.str.contains('IG\wV').all():
         return 'B cell'
-    elif df.v_call.str.startswith('TR').all():
+    elif df.v_call.str.contains('TR\wV').all():
         return 'T cell'
     else:
         raise ValueError('Mixed / unknown cell types found in dataframe: '
@@ -45,6 +46,13 @@ def rename_changeo_columns(df, revert=False):
         # revert to original columns
         df.rename(columns={v: k for k, v in rename_dict}, inplace=True)
         df.rename(columns=lambda x: x.upper(), inplace=True)
+
+    if 'cdr3aa' not in df.columns:
+        print('\nWarning: change-o MakeDB.py was not run with "--cdr3".'
+              ' Translating the amino acid CDR3 from IMGT nucleotide'
+              ' sequence instead.')
+        df['cdr3aa'] = df.cdr3_imgt.apply(
+            lambda x: x if pd.isnull(x) else str(Seq(x).translate()))
 
     return df
 
