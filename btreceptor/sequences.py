@@ -197,6 +197,15 @@ def _no_stop_codon(aa_seq):
         return False
 
 
+def _no_Ns(nt_seq):
+    """ Returns True if a sequence does not have any N's """
+
+    if 'N' not in nt_seq:
+        return True
+    else:
+        return False
+
+
 def _check_vdj_len(nt_seq):
     """ Verifies the length of a VDJ nucleotide sequence mod 3 equals 1
         (The constant region continues the reading frame)
@@ -246,6 +255,7 @@ def df_vdj_qc(frame, species, verbose=False):
                 - (object) cdr2aa
                 - (bool) ok_vdj_len
                 - (bool) ok_stop_codon
+                - (bool) ok_Ns
                 - (bool) ok_cdr12_lens
                 - (bool) ok_cdr3_in_trans
                 - (bool) ok_all - AND of all other `ok_` columns
@@ -292,11 +302,14 @@ def df_vdj_qc(frame, species, verbose=False):
 
     df['ok_stop_codon'] = df.aa_vdj.apply(_no_stop_codon)
 
+    df['ok_Ns'] = df.nt_vdj.apply(_no_Ns)
+
     df['ok_cdr3_in_trans'] = df.apply(lambda x: x.cdr3aa in x.aa_vdj, axis=1)
 
     df['ok_all'] = (df.ok_vdj_len &
                     df.ok_cdr12_lens &
                     df.ok_stop_codon &
+                    df.ok_Ns &
                     df.ok_cdr3_in_trans)
 
     if verbose:

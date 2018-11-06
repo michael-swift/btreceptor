@@ -1,5 +1,10 @@
-from btreceptor import sequences
+from btreceptor import sequences, parsing
 import pandas as pd
+import numpy as np
+from numpy.testing import assert_array_equal
+import os
+import warnings
+from Bio import BiopythonWarning
 
 
 def test_fill_missing_nt():
@@ -54,6 +59,26 @@ def test_fill_clean():
     assert outcome == expected
 
 
+def test_no_need_fill_clean():
+
+    refs = {'IGHVX-Y': 'ATATATGCGCGCATGCATGTCGCATAGCGCGACGTCTA',
+            'IGHJZ': 'ATTTCGCTGCAACGGATCTGAACCGGCCTTCACACATT'}
+
+    # seq has full V / J and no deletions so no fill / clean necessary
+    seq = refs['IGHVX-Y'] + refs['IGHJZ']
+
+    series = pd.Series({'seqid': 'test_with_gap',
+                        'sequence_vdj': seq,
+                        'v_call': 'IGHVX-Y',
+                        'j_call': 'IGHJZ'
+                        })
+
+    expected = seq
+    outcome = sequences.fill_clean_sequence(series, refs, verbose=False)
+
+    assert outcome == expected
+
+
 def test_no_stop_codon():
 
     assert sequences._no_stop_codon('ASGY')
@@ -62,6 +87,16 @@ def test_no_stop_codon():
 def test_stop_codon():
 
     assert not sequences._no_stop_codon('ASG*Y')
+
+
+def test_Ns_in_nt_seq():
+
+    assert not sequences._no_Ns('ATGNNC')
+
+
+def test_no_Ns_in_nt_seq():
+
+    assert sequences._no_Ns('ATGC')
 
 
 def test_correct_vdj_len():
@@ -98,3 +133,26 @@ def test_cdr12_wrong_lens():
                         'cdr2aa': 'IS'})
 
     assert not sequences._check_cdr12_lens(series, species)
+
+
+def test_vdj_qc():
+
+    # load test immune repertoire data
+    test_data_dir = os.path.dirname(os.path.realpath(__file__))
+
+    df = parsing.load_changeo_igblast_makedb(
+        '{}/imgt_ig_db-pass.tsv'.format(test_data_dir))
+
+    # convert v/j_call columns to genes
+    # e.g. Homsap IGLV1-40*01 F,Homsap IGLV1-40*02 F --> IGLV1-40*01
+    df['v_call'] = df.v_call.apply(lambda x: x.split(' ')[1])
+    df['j_call'] = df.j_call.apply(lambda x: x.split(' ')[1])
+
+    warnings.simplefilter('ignore', BiopythonWarning)  # ignore partial codon
+    dfqc = sequences.df_vdj_qc(df, 'human')
+
+    # first 3 sequences have N's, otherwise remaining 4 are OK
+    ok_Ns = np.array([False]*3 + [True]*4)
+
+    assert_array_equal(dfqc.ok_Ns.values, ok_Ns)
+    assert_array_equal(dfqc.ok_all.values, ok_Ns)
