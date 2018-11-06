@@ -47,7 +47,7 @@ def df_add_lineages(dfin, similarity_cutoff):
             # CDR3 distance comparisoin
             sub_lineages = df_lineages_from_subset(sub, similarity_cutoff)
             lins += zip(sub.index, sub_lineages + lincnt)
-            lincnt += sub.shape[0]
+            lincnt += np.unique(sub_lineages).shape[0]
         else:
             # single sequence belongs in its own lineage
             lins.append((sub.index.values[0], lincnt))
