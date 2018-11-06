@@ -37,6 +37,11 @@ def df_add_lineages(dfin, similarity_cutoff):
 
     dfin = dfin.copy()
 
+    # unique index required for join
+    if not dfin.index.is_unique:
+        print("Input DataFrame index not unique, applying reset_index().")
+        dfin.reset_index(drop=True, inplace=True)
+
     lincnt = 0
     lins = []
 

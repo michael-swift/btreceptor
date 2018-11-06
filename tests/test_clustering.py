@@ -25,8 +25,9 @@ class TestClustering(object):
         ],
                                      columns=cols)
 
+        # ignore_index=False for testing index with duplicate values
         self.df_mult_groups = self.df_group_1.append(df_other_seqs,
-                                                     ignore_index=True)
+                                                     ignore_index=False)
 
     def test_pw_edit(self):
         """ First three cells belong to same V/J/CDR3 length group """
@@ -49,7 +50,7 @@ class TestClustering(object):
 
         df_with_lins = clustering.df_add_lineages(self.df_mult_groups, 0.85)
 
-        expected = self.df_mult_groups.copy()
+        expected = self.df_mult_groups.reset_index(drop=True)
         expected['lineage'] = [0, 0, 1, 2, 3]
 
         assert_frame_equal(df_with_lins, expected)
