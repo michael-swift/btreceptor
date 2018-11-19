@@ -221,7 +221,8 @@ def _check_cdr12_lens(row, species):
     """ Verifies the length of the CDR1 and CDR2 amino acid sequences """
 
     # lookup expected lengths based on V call for the given species
-    expected_lengths = cdr_12_aa_lengths[species][row.v_call.split('-')[0]]
+    v_call = (row.v_call.split('-')[0]).rstrip('D')
+    expected_lengths = cdr_12_aa_lengths[species][v_call]
 
     actual_lengths = (len(row.cdr1aa), len(row.cdr2aa))
     if actual_lengths in expected_lengths:
