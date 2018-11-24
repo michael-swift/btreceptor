@@ -295,9 +295,11 @@ def df_vdj_qc(frame, species, verbose=False):
                   ' Replacing with empty string'.format(col))
             df[col] = df[col].fillna('')
 
-    df['cdr1aa'] = df.cdr1_imgt.apply(lambda x: translate(x.replace('.', '')))
+    df['cdr1aa'] = df.cdr1_imgt.apply(lambda x: translate(
+        x.replace('.', '').replace('-', '')))
 
-    df['cdr2aa'] = df.cdr2_imgt.apply(lambda x: translate(x.replace('.', '')))
+    df['cdr2aa'] = df.cdr2_imgt.apply(lambda x: translate(
+        x.replace('.', '').replace('-', '')))
 
     df['ok_cdr12_lens'] = df.apply(_check_cdr12_lens, axis=1, species=species)
 
