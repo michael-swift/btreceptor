@@ -8,30 +8,90 @@ from Bio import BiopythonWarning
 
 
 def test_fill_missing_nt():
-    ref_seq = 'ATATGGGGCCTCTAC'
-    test_seq =  'TATGGGGCCCT'
+    ref_seq_aln = 'ATATGGGGCCTCTAC'
+    seq_aligned = '--TGGGGCCCTCTAC'
 
-    filled = sequences._fill_missing_nt(ref_seq, test_seq)
+    filled = sequences._fill_missing_nt(ref_seq_aln, seq_aligned)
 
-    assert filled == ref_seq
-
-
-def test_v_fill():
-    ref_seq = 'CGATTACACTGATCAGGGGTACAC'
-    seq =       'ATTACACTGATCACCCGTACAC'
-
-    filled = sequences._vfill(ref_seq, seq)
-
-    assert filled == 'CG' + seq
+    assert filled == ref_seq_aln[:2] + seq_aligned[2:]
 
 
-def test_j_fill():
-    ref_seq = 'CCATACACGATTACACTGACGG'
-    seq =     'CCATAGACGATTGCACTGA'
+class TestVgeneCorrection(object):
 
-    filled = sequences._jfill(ref_seq, seq)
+    def setup_method(self):
 
-    assert filled == seq + 'CGG'
+        self.ref_seq = 'CGATTACACTGATCAGGGGTACAC'
+
+    def test_v_fill(self):
+        # missing CG at the beginning
+        seq = 'ATTACACTGATCACCCGTACAC'
+
+        filled = sequences._vfix(self.ref_seq, seq)
+
+        assert filled == 'CG' + seq
+
+    def test_v_trim(self):
+        # extra ATGC at the beginning
+        seq = 'ATGCCGATTACACTGATCACCCGTACAC'
+
+        filled = sequences._vfix(self.ref_seq, seq)
+
+        assert filled == seq[4:]
+
+    def test_v_retain_deletion(self):
+
+        seq = self.ref_seq[:6] + self.ref_seq[9:]
+
+        filled = sequences._vfix(self.ref_seq, seq)
+
+        assert filled == seq
+
+    def test_v_retain_insertion(self):
+
+        seq = self.ref_seq[:6] + 'CAT' + self.ref_seq[6:]
+
+        filled = sequences._vfix(self.ref_seq, seq)
+
+        assert filled == seq
+
+
+class TestJgeneCorrection(object):
+
+    def setup_method(self):
+
+        self.ref_seq = 'CCATACACGATTACACTGACGG'
+
+    def test_j_fill(self):
+        # missing final 3 nts
+        seq = 'CCATAGACGATTGCACTGA'
+
+        filled = sequences._jfix(self.ref_seq, seq)
+
+        assert filled == seq + 'CGG'
+
+    def test_j_trim(self):
+        # extra 3 nts
+        seq = 'CCATAGACGATTGCACTGACGGACG'
+
+        filled = sequences._jfix(self.ref_seq, seq)
+
+        assert filled == seq[:-3]
+
+    def test_j_retain_deletion(self):
+
+        seq = self.ref_seq[:3] + self.ref_seq[6:]
+
+        filled = sequences._jfix(self.ref_seq, seq)
+
+        assert filled == seq
+
+    def test_j_retain_insertion(self):
+
+        seq = self.ref_seq[:3] + 'CAT' + self.ref_seq[3:]
+
+        filled = sequences._jfix(self.ref_seq, seq)
+
+        assert filled == seq
 
 
 def test_fill_clean():
@@ -39,13 +99,18 @@ def test_fill_clean():
     refs = {'IGHVX-Y': 'ATATATGCGCGCATGCATGTCGCATAGCGCGACGTCTA',
             'IGHJZ': 'ATTTCGCTGCAACGGATCTGAACCGGCCTTCACACATT'}
 
-    # create sequence missing 1 nucleotide in beginning and end, has gap in V
+    # create sequence with 1 nucleotide missing in beginning, 2 extra
+    # nucleotides at the end, a V insertion, J deletion, and gap
     fake_cdr3 = 'ATGCAGATGGGAACCGGG'
     seq = (refs['IGHVX-Y'][1:10] +
            '---' +
-           refs['IGHVX-Y'][10:-5] +
+           refs['IGHVX-Y'][10:20] +
+           'CAT' +
+           refs['IGHVX-Y'][20:-5] +
            fake_cdr3 +
-           refs['IGHJZ'][5:-1])
+           refs['IGHJZ'][5:20] +
+           refs['IGHJZ'][23:] + 'AT'
+           )
 
     series = pd.Series({'seqid': 'test_with_gap',
                         'sequence_vdj': seq,
@@ -53,7 +118,8 @@ def test_fill_clean():
                         'j_call': 'IGHJZ'
                         })
 
-    expected = refs['IGHVX-Y'][:-5] + fake_cdr3 + refs['IGHJZ'][5:]
+    expected = (refs['IGHVX-Y'][:20] + 'CAT' + refs['IGHVX-Y'][20:-5] +
+                fake_cdr3 + refs['IGHJZ'][5:20] + refs['IGHJZ'][23:])
     outcome = sequences.fill_clean_sequence(series, refs, verbose=False)
 
     assert outcome == expected
@@ -67,7 +133,7 @@ def test_no_need_fill_clean():
     # seq has full V / J and no deletions so no fill / clean necessary
     seq = refs['IGHVX-Y'] + refs['IGHJZ']
 
-    series = pd.Series({'seqid': 'test_with_gap',
+    series = pd.Series({'seqid': 'test_ok',
                         'sequence_vdj': seq,
                         'v_call': 'IGHVX-Y',
                         'j_call': 'IGHJZ'

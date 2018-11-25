@@ -78,31 +78,70 @@ cdr_12_aa_lengths = {
 }
 
 
-def _jfill(j_ref, seq):
-    """ Replace any nucleotides missing from the start of the J gene
+def _seqfix(ref_seq, seq, comp_len, rev):
+    """ Fill or trim a portion of the beginning of a sequence relative to a
+        reference sequence
+
+        Args:
+            ref_seq (str): reference sequence e.g. germline gene
+            seq (str): sequence to compare to reference
+            comp_len (int): length of subsequence to compare e.g. necessary to
+                exclude the CDR3 rev (bool): whether to reverse the sequences
+            for J gene
+                filling / trimming
+        Returns:
+            seq_fixed (str): sequence filled / trimmed as necessary
     """
 
-    j_ref = j_ref[-25:]
-    j_seq = seq[-25:]
+    if rev:
+        ref_comp = ref_seq[::-1][:comp_len]
+        seq_comp = seq[::-1][:comp_len]
+    else:
+        ref_comp = ref_seq[:comp_len]
+        seq_comp = seq[:comp_len]
 
-    j_filled = _fill_missing_nt(j_ref, j_seq)
+    ref_aligned, seq_aligned = global_pw_align(ref_comp, seq_comp)
 
-    seq_filled = seq[:-25] + j_filled
+    if ref_aligned.startswith('-'):
+        # need to trim sequence
+        fixed = _trim_extra_nt(ref_aligned, seq_aligned)
+    elif seq_aligned.startswith('-'):
+        # need to fill sequence
+        fixed = _fill_missing_nt(ref_aligned, seq_aligned)
+    else:
+        fixed = seq_aligned
 
-    return seq_filled
+    if rev:
+        seq_fixed = seq[:-comp_len] + fixed[::-1]
+    else:
+        seq_fixed = fixed + seq[comp_len:]
+
+    return seq_fixed.replace('-', '')
 
 
-def _vfill(v_ref, seq):
-    """ Replace any nucleotides missing from the start of the V gene
+def _jfix(j_ref, seq):
+    """ Trim or fill nucleotides at the end of the J gene.
+
+        Reverse necessary as filling / trimming is designed for the beginning
+        of a sequence
     """
+    comparison_len = 25
+    reverse_seq = True
 
-    v_ref = v_ref[:75]
-    v_seq = seq[:75]
+    j_fixed = _seqfix(j_ref, seq, comparison_len, reverse_seq)
 
-    v_filled = _fill_missing_nt(v_ref, v_seq)
-    seq_filled = v_filled + seq[75:]
+    return j_fixed
 
-    return seq_filled
+
+def _vfix(v_ref, seq):
+    """ Trim or fill nucleotides at the start of the V gene
+    """
+    comparison_len = 75
+    reverse_seq = False
+
+    v_fixed = _seqfix(v_ref, seq, comparison_len, reverse_seq)
+
+    return v_fixed
 
 
 def global_pw_align(s0, s1):
@@ -120,29 +159,41 @@ def global_pw_align(s0, s1):
     return s0_aln, s1_aln
 
 
-def _fill_missing_nt(ref_seq, seq):
-    """ Perform pairwise alignment between two sequences and fill in
-        missing nucleotides
+def _fill_missing_nt(ref_seq_aln, seq_aln):
+    """ Fill in nucleotides missing from the beginning of a sequence with
+        respect to a reference sequence
     """
 
-    ref_aligned, seq_aligned = global_pw_align(ref_seq, seq)
-
-    if '-' in seq_aligned:
+    if seq_aln.startswith('-'):
         filled = ''
-        for char_ref, char_seq in zip(ref_aligned, seq_aligned):
+        for pos, (char_ref, char_seq) in enumerate(zip(ref_seq_aln, seq_aln)):
             if char_seq == '-':
                 filled += char_ref
             else:
-                filled += char_seq
+                break
+        return filled + seq_aln[pos:]
     else:
-        filled = seq_aligned
+        return seq_aln
 
-    return filled
+
+def _trim_extra_nt(ref_seq_aln, seq_aln):
+    """ Trim extra nucleotides from the beginning of a sequence with respect to
+        a reference sequence
+    """
+
+    if ref_seq_aln.startswith('-'):
+        for pos, (char_ref, char_seq) in enumerate(zip(ref_seq_aln, seq_aln)):
+            if char_ref != '-':
+                break
+        return seq_aln[pos:]
+    else:
+        return seq_aln
 
 
 def fill_clean_sequence(row, vj_ref_dict, verbose):
-    """ Clean gaps arising from deletions and fill in missing nucleotides at
-        the beginning of the V gene or end of the J gene.
+    """ Clean gaps arising from deletions and fill in missing nucleotides or
+        trim excess nucleotides at the beginning of the V gene and/or end of
+        the J gene.
 
         Args:
             row (pd.Series): Series containg the following columns:
@@ -160,13 +211,13 @@ def fill_clean_sequence(row, vj_ref_dict, verbose):
         degap = row.sequence_vdj
 
     try:
-        vfilled = _vfill(vj_ref_dict[row.v_call], degap)
+        vfilled = _vfix(vj_ref_dict[row.v_call], degap)
     except KeyError:
         print('{} V gene was not found in the reference'.format(row.v_call))
         return None
 
     try:
-        vjfilled = _jfill(vj_ref_dict[row.j_call], vfilled)
+        vjfilled = _jfix(vj_ref_dict[row.j_call], vfilled)
     except KeyError:
         print('{} J gene was not found in the reference'.format(row.j_call))
         return None
