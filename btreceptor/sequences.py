@@ -190,7 +190,7 @@ def _trim_extra_nt(ref_seq_aln, seq_aln):
         return seq_aln
 
 
-def fill_clean_sequence(row, vj_ref_dict, verbose):
+def _fill_clean_sequence(row, vj_ref_dict, verbose):
     """ Clean gaps arising from deletions and fill in missing nucleotides or
         trim excess nucleotides at the beginning of the V gene and/or end of
         the J gene.
@@ -210,17 +210,9 @@ def fill_clean_sequence(row, vj_ref_dict, verbose):
     else:
         degap = row.sequence_vdj
 
-    try:
-        vfilled = _vfix(vj_ref_dict[row.v_call], degap)
-    except KeyError:
-        print('{} V gene was not found in the reference'.format(row.v_call))
-        return None
+    vfilled = _vfix(vj_ref_dict[row.v_call], degap)
 
-    try:
-        vjfilled = _jfix(vj_ref_dict[row.j_call], vfilled)
-    except KeyError:
-        print('{} J gene was not found in the reference'.format(row.j_call))
-        return None
+    vjfilled = _jfix(vj_ref_dict[row.j_call], vfilled)
 
     if row.sequence_vdj != vjfilled and verbose:
         s0, s1 = global_pw_align(row.sequence_vdj, vjfilled)
@@ -330,7 +322,20 @@ def df_vdj_qc(frame, species, verbose=False):
             if not vj_refs[gene].endswith('G'):
                 vj_refs[gene] += 'G'
 
-    df['nt_vdj'] = df.apply(fill_clean_sequence,
+    # V/J call must be present in the reference for filling / trimming
+    v_present = df.v_call.isin(vj_refs)
+    j_present = df.j_call.isin(vj_refs)
+
+    if not v_present.all():
+        missing_v = df.loc[v_present[~v_present].index].v_call.values
+        raise KeyError('The following V gene calls were not found in the'
+                       ' reference: {}'.format(missing_v))
+    if not j_present.all():
+        missing_j = df.loc[j_present[~j_present].index].j_call.values
+        raise KeyError('The following V gene calls were not found in the'
+                       ' reference: {}'.format(missing_j))
+
+    df['nt_vdj'] = df.apply(_fill_clean_sequence,
                             axis=1,
                             vj_ref_dict=vj_refs,
                             verbose=verbose)

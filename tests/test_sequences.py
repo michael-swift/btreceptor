@@ -5,6 +5,7 @@ from numpy.testing import assert_array_equal
 import os
 import warnings
 from Bio import BiopythonWarning
+import pytest
 
 
 def test_fill_missing_nt():
@@ -14,6 +15,24 @@ def test_fill_missing_nt():
     filled = sequences._fill_missing_nt(ref_seq_aln, seq_aligned)
 
     assert filled == ref_seq_aln[:2] + seq_aligned[2:]
+
+
+def test_no_fill_necessary():
+    ref_seq_aln = 'ATATGGGGCCTCTAC'
+    seq_aligned = ref_seq_aln
+
+    filled = sequences._fill_missing_nt(ref_seq_aln, seq_aligned)
+
+    assert filled == ref_seq_aln
+
+
+def test_no_trim_necessary():
+    ref_seq_aln = 'ATATGGGGCCTCTAC'
+    seq_aligned = ref_seq_aln
+
+    filled = sequences._trim_extra_nt(ref_seq_aln, seq_aligned)
+
+    assert filled == ref_seq_aln
 
 
 class TestVgeneCorrection(object):
@@ -120,7 +139,7 @@ def test_fill_clean():
 
     expected = (refs['IGHVX-Y'][:20] + 'CAT' + refs['IGHVX-Y'][20:-5] +
                 fake_cdr3 + refs['IGHJZ'][5:20] + refs['IGHJZ'][23:])
-    outcome = sequences.fill_clean_sequence(series, refs, verbose=False)
+    outcome = sequences._fill_clean_sequence(series, refs, verbose=False)
 
     assert outcome == expected
 
@@ -140,7 +159,7 @@ def test_no_need_fill_clean():
                         })
 
     expected = seq
-    outcome = sequences.fill_clean_sequence(series, refs, verbose=False)
+    outcome = sequences._fill_clean_sequence(series, refs, verbose=False)
 
     assert outcome == expected
 
@@ -201,24 +220,33 @@ def test_cdr12_wrong_lens():
     assert not sequences._check_cdr12_lens(series, species)
 
 
-def test_vdj_qc():
+class TestVDJqc(object):
 
-    # load test immune repertoire data
-    test_data_dir = os.path.dirname(os.path.realpath(__file__))
+    def setup_method(self):
+        # load test immune repertoire data
+        test_data_dir = os.path.dirname(os.path.realpath(__file__))
 
-    df = parsing.load_changeo_igblast_makedb(
-        '{}/imgt_ig_db-pass.tsv'.format(test_data_dir))
+        self.df = parsing.load_changeo_igblast_makedb(
+            '{}/imgt_ig_db-pass.tsv'.format(test_data_dir))
 
-    # convert v/j_call columns to genes
-    # e.g. Homsap IGLV1-40*01 F,Homsap IGLV1-40*02 F --> IGLV1-40*01
-    df['v_call'] = df.v_call.apply(lambda x: x.split(' ')[1])
-    df['j_call'] = df.j_call.apply(lambda x: x.split(' ')[1])
+    def test_vdj_qc(self):
 
-    warnings.simplefilter('ignore', BiopythonWarning)  # ignore partial codon
-    dfqc = sequences.df_vdj_qc(df, 'human')
+        # convert v/j_call columns to genes
+        # e.g. Homsap IGLV1-40*01 F,Homsap IGLV1-40*02 F --> IGLV1-40*01
+        self.df['v_call'] = self.df.v_call.apply(lambda x: x.split(' ')[1])
+        self.df['j_call'] = self.df.j_call.apply(lambda x: x.split(' ')[1])
 
-    # first 3 sequences have N's, otherwise remaining 4 are OK
-    ok_Ns = np.array([False]*3 + [True]*4)
+        warnings.simplefilter('ignore', BiopythonWarning)  # skip partial codon
+        dfqc = sequences.df_vdj_qc(self.df, 'human', verbose=True)
 
-    assert_array_equal(dfqc.ok_Ns.values, ok_Ns)
-    assert_array_equal(dfqc.ok_all.values, ok_Ns)
+        # first 3 sequences have N's, otherwise remaining 4 are OK
+        ok_Ns = np.array([False]*3 + [True]*4)
+
+        assert_array_equal(dfqc.ok_Ns.values, ok_Ns)
+        assert_array_equal(dfqc.ok_all.values, ok_Ns)
+
+    def test_vdj_unexpected_gene_calls(self):
+
+        # don't correct v_call / j_call, expect KeyError
+        with pytest.raises(KeyError):
+            sequences.df_vdj_qc(self.df, 'human', verbose=True)
