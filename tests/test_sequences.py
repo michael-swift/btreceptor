@@ -19,7 +19,7 @@ def test_fill_missing_nt():
 
 def test_no_fill_necessary():
     ref_seq_aln = 'ATATGGGGCCTCTAC'
-    seq_aligned = ref_seq_aln
+    seq_aligned = 'ATATGGGGCCTCTAC'
 
     filled = sequences._fill_missing_nt(ref_seq_aln, seq_aligned)
 
@@ -28,11 +28,29 @@ def test_no_fill_necessary():
 
 def test_no_trim_necessary():
     ref_seq_aln = 'ATATGGGGCCTCTAC'
-    seq_aligned = ref_seq_aln
+    seq_aligned = 'ATATGGGGCCTCTAC'
 
     filled = sequences._trim_extra_nt(ref_seq_aln, seq_aligned)
 
     assert filled == ref_seq_aln
+
+
+def test_replace_Ns():
+    ref_seq_aln = 'ATATGGGGCCTCTAC'
+    seq_aligned = 'NTATGGGGNCTCTNC'
+
+    replaced = sequences._replace_Ns_with_ref(ref_seq_aln, seq_aligned)
+
+    assert replaced == ref_seq_aln
+
+
+def test_no_replace_Ns():
+    ref_seq_aln = 'ATATGGGGCCTCTAC'
+    seq_aligned = 'ATATGGGGCCTCTAC'
+
+    replaced = sequences._replace_Ns_with_ref(ref_seq_aln, seq_aligned)
+
+    assert replaced == ref_seq_aln
 
 
 class TestVgeneCorrection(object):
@@ -119,9 +137,11 @@ def test_fill_clean():
             'IGHJZ': 'ATTTCGCTGCAACGGATCTGAACCGGCCTTCACACATT'}
 
     # create sequence with 1 nucleotide missing in beginning, 2 extra
-    # nucleotides at the end, a V insertion, J deletion, and gap
+    # nucleotides at the end, a V insertion, J deletion, gap, and N
     fake_cdr3 = 'ATGCAGATGGGAACCGGG'
-    seq = (refs['IGHVX-Y'][1:10] +
+    seq = (refs['IGHVX-Y'][1:5] +
+           'N' +
+           refs['IGHVX-Y'][6:10] +
            '---' +
            refs['IGHVX-Y'][10:20] +
            'CAT' +

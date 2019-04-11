@@ -102,6 +102,9 @@ def _seqfix(ref_seq, seq, comp_len, rev):
 
     ref_aligned, seq_aligned = global_pw_align(ref_comp, seq_comp)
 
+    # replace N's in seq if present
+    seq_aligned = _replace_Ns_with_ref(ref_aligned, seq_aligned)
+
     if ref_aligned.startswith('-'):
         # need to trim sequence
         fixed = _trim_extra_nt(ref_aligned, seq_aligned)
@@ -142,6 +145,26 @@ def _vfix(v_ref, seq):
     v_fixed = _seqfix(v_ref, seq, comparison_len, reverse_seq)
 
     return v_fixed
+
+
+def _replace_Ns_with_ref(ref, seq):
+    """ Replace Ns in a sequence given an aligned reference """
+
+    assert len(ref) == len(seq)
+
+    if 'N' not in seq and 'n' not in seq:
+        return seq
+    else:
+        replaced = ''
+        for r, s in zip(ref, seq):
+            if s == 'N' or s == 'n':
+                replaced += r
+            else:
+                replaced += s
+
+        assert len(replaced) == len(seq)
+
+        return replaced
 
 
 def global_pw_align(s0, s1):
