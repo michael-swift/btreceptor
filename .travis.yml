@@ -19,7 +19,7 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytest
   - conda config --add channels bioconda
   - conda config --add channels conda-forge
-  - while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
   - source activate test-environment
+  - while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
 script:
   - pytest -v
