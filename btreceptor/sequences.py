@@ -21,7 +21,6 @@ cdr_12_aa_lengths = {
         'IGKV1': [(6, 3)],
         'IGKV2': [(11, 3), (12, 3)],
         'IGKV3': [(6, 3), (7, 3)],
-        'IGKV3D': [(6, 3), (7, 3)],
         'IGKV4': [(12, 3)],
         'IGKV5': [(6, 3)],
         'IGKV6': [(6, 3)],
@@ -287,7 +286,7 @@ def _check_cdr12_lens(row, species):
     """ Verifies the length of the CDR1 and CDR2 amino acid sequences """
 
     # lookup expected lengths based on V call for the given species
-    v_call = (row.v_call.split('-')[0]).rstrip('D')
+    v_call = row.v_call.split('/')[0].split('-')[0].rstrip('D')
     expected_lengths = cdr_12_aa_lengths[species][v_call]
 
     actual_lengths = (len(row.cdr1aa), len(row.cdr2aa))

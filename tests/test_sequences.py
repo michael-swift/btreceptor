@@ -222,22 +222,30 @@ def test_translate():
 
 def test_cdr12_correct_lens():
 
-    species = 'human'
     series = pd.Series({'v_call': 'IGHV1',
                         'cdr1aa': 'GLPSNDNW',
                         'cdr2aa': 'ISPYDSNT'})
 
-    assert sequences._check_cdr12_lens(series, species)
+    assert sequences._check_cdr12_lens(series, 'human')
 
 
 def test_cdr12_wrong_lens():
 
-    species = 'human'
     series = pd.Series({'v_call': 'IGHV1',
                         'cdr1aa': 'GL',
                         'cdr2aa': 'IS'})
 
-    assert not sequences._check_cdr12_lens(series, species)
+    assert not sequences._check_cdr12_lens(series, 'human')
+
+
+def test_cdr12_lens_v_call_name_variants():
+
+    for v_call in ['IGKV3', 'IGKV3D-15*01', 'IGKV3/OR2-268*02']:
+        series = pd.Series({'v_call': v_call,
+                            'cdr1aa': 'YYYYYY',
+                            'cdr2aa': 'YYY'})
+
+        assert sequences._check_cdr12_lens(series, 'human')
 
 
 class TestVDJqc(object):
