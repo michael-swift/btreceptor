@@ -16,11 +16,10 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytest
   - conda config --add channels bioconda
   - conda config --add channels conda-forge
   - while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
-  - conda install pytest
   - source activate test-environment
 script:
   - pytest -v
