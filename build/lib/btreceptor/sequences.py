@@ -335,15 +335,15 @@ def df_vdj_qc(frame, species, verbose=False):
         db_path = os.path.realpath(os.path.join(os.path.dirname(__file__),
                                                 '..',
                                                 'data/germlines_immcantationdocker/imgt/human/vdj/'))
-        print("using michael's patch and docker files")
+        print("using michael's patch")
         #print(vj_refs)
         ref_fa = '{}/imgt_{}_IGH{}.fasta'.format(db_path, species, gene)
         vj_refs.update(parsing.load_gene_fasta(ref_fa))
 
     # append missing 'G' to two human J gene reference seqs
     if species == 'human':
-        #for gene in ['X86356', 'X86355']:
-         for gene in ['IGHJ6*02', 'IGHJ6*03']:
+        for gene in ['X86356', 'X86355']:
+        #for gene in ['IGHJ6*02', 'IGHJ6*03']:
             if not vj_refs[gene].endswith('G'):
                 vj_refs[gene] += 'G'
 

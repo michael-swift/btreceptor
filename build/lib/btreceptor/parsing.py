@@ -94,10 +94,7 @@ def load_gene_fasta(infile):
     """
 
     gene_dict = SeqIO.to_dict(SeqIO.parse(infile, 'fasta'))
-    # Parse the Fasta Header to get just the Gene names
-    gene_dict = {k.split('|')[1]: v for k,v in gene_dict.items()}
-    # remove gaps
-    gene_dict = {k: str(v.seq).replace('.','') for k, v in gene_dict.items()}
     # convert SeqRecord sequences to uppercase string
-    gene_dict = {k: v.upper() for k, v in gene_dict.items()}
+    gene_dict = {k: str(v.seq).upper() for k, v in gene_dict.items()}
+
     return gene_dict

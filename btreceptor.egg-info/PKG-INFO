@@ -1,0 +1,20 @@
+Metadata-Version: 2.1
+Name: btreceptor
+Version: 0.0.1
+Summary: bt receptor package for blue tooth receptor analysis
+Home-page: https://github.com/dcroote/btreceptor.git
+Author: Derek Croote
+Author-email: author@example.com
+License: UNKNOWN
+Description: # B and T cell receptor utilities
+        
+        [![Build Status](https://travis-ci.org/dcroote/btreceptor.svg?branch=master)](https://travis-ci.org/dcroote/btreceptor)
+        
+        Miscellaneous functions for manipulating B and T cell receptor sequencing data from varying sources, but with an emphasis on data from single cell RNA-sequencing (scRNA-seq) experiments.
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
