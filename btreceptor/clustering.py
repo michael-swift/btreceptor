@@ -11,7 +11,7 @@ def df_pw_edit(frame):
     """ Returns array of pairwise edit distances in square form """
 
     ed = np.zeros(int((frame.shape[0]/2)*(frame.shape[0]-1)), dtype='float')
-    for c, (x, y) in enumerate(combinations(frame.cdr3aa.values, 2)):
+    for c, (x, y) in enumerate(combinations(frame.cdr3_aa.values, 2)):
         ed[c] = Levenshtein.distance(x, y) / np.max([len(x), len(y)])
     sq = squareform(ed)
 
@@ -36,7 +36,7 @@ def df_add_lineages(dfin, similarity_cutoff):
     """
 
     dfin = dfin.copy()
-
+    dfin['cdr3aa_len'] = dfin['cdr3_aa'].str.len()
     # unique index required for join
     if not dfin.index.is_unique:
         print("Input DataFrame index not unique, applying reset_index().")
